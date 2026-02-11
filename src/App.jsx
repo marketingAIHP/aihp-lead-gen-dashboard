@@ -11,7 +11,7 @@ export default function GurgaonLeadIntelligenceDashboard() {
   const [activeResearch, setActiveResearch] = useState({});
   const [showEmailPreview, setShowEmailPreview] = useState(null);
   const [emailCopied, setEmailCopied] = useState(false);
-  
+
   // Major anchor tenants
   const anchorTenants = [
     {
@@ -121,16 +121,16 @@ export default function GurgaonLeadIntelligenceDashboard() {
   ];
 
   const addProgress = (message, status = 'info') => {
-    setResearchProgress(prev => [...prev, { 
-      message, 
-      status, 
-      timestamp: new Date().toLocaleTimeString() 
+    setResearchProgress(prev => [...prev, {
+      message,
+      status,
+      timestamp: new Date().toLocaleTimeString()
     }]);
   };
 
   const isCompetitor = (companyName) => {
     const lowerName = companyName.toLowerCase();
-    return competitorList.some(competitor => 
+    return competitorList.some(competitor =>
       lowerName.includes(competitor.toLowerCase())
     );
   };
@@ -139,7 +139,7 @@ export default function GurgaonLeadIntelligenceDashboard() {
     const totalWeight = signals.reduce((sum, s) => sum + s.weight, 0);
     const maxWeight = 0.95 * signals.length;
     const score = Math.round((totalWeight / maxWeight) * 100);
-    
+
     if (score >= 85) return { priority: 'HOT', color: 'bg-red-500', action: 'Contact Today', timeline: 'Immediate' };
     if (score >= 70) return { priority: 'WARM', color: 'bg-orange-500', action: 'Contact This Week', timeline: '1-2 weeks' };
     if (score >= 55) return { priority: 'QUALIFIED', color: 'bg-yellow-500', action: 'Add to Pipeline', timeline: '2-4 weeks' };
@@ -150,12 +150,12 @@ export default function GurgaonLeadIntelligenceDashboard() {
   const generateEmailContent = (lead) => {
     let subject = '';
     let body = '';
-    
+
     if (lead.anchor) {
       // Ecosystem lead email
       const anchorInfo = anchorTenants.find(a => a.name === lead.anchor);
       subject = `Office Space Near ${lead.anchor}'s ${lead.estimatedSpace || '617K sq ft'} Gurgaon Campus`;
-      
+
       body = `Hi Team,
 
 I noticed ${lead.name} is ${lead.relationship === 'Vendor' ? 'a vendor to' : lead.relationship === 'Partner' ? 'a partner with' : 'in the ecosystem of'} ${lead.anchor} - congratulations on the partnership!
@@ -180,11 +180,11 @@ AIHP - India's First Corporate Landlord
 Phone: [Your Phone]
 Email: [Your Email]
 Website: www.aihp.in`;
-      
+
     } else if (lead.category === 'funding') {
       // Funding lead email
       subject = `Congrats on the Series ${lead.signal?.includes('Series C') ? 'C' : 'B'}! Office Space for Growth 🎉`;
-      
+
       body = `Hi Team,
 
 Congratulations on ${lead.name}'s recent funding round! 🎉
@@ -208,11 +208,11 @@ Best regards,
 AIHP
 Phone: [Your Phone]
 Email: [Your Email]`;
-      
+
     } else if (lead.category === 'hiring' || lead.signal?.toLowerCase().includes('facility manager')) {
       // Hiring/Facility Manager lead email
       subject = `Office Space Solution for ${lead.name}'s Gurgaon Expansion`;
-      
+
       body = `Hi Team,
 
 I noticed ${lead.name} is hiring ${lead.signal?.includes('facility') ? 'a Facility Manager' : 'multiple positions'} in Gurgaon - congratulations on the expansion!
@@ -237,11 +237,11 @@ Best regards,
 AIHP
 Phone: [Your Phone]
 Email: [Your Email]`;
-      
+
     } else {
       // Generic expansion lead email
       subject = `Premium Office Space in Gurgaon for ${lead.name}`;
-      
+
       body = `Hi Team,
 
 I came across ${lead.name}'s ${lead.signal || 'expansion plans in Gurgaon'} and wanted to reach out.
@@ -265,7 +265,7 @@ Phone: [Your Phone]
 Email: [Your Email]
 Website: www.aihp.in`;
     }
-    
+
     return { subject, body };
   };
 
@@ -311,7 +311,7 @@ Website: www.aihp.in`;
 
     try {
       let searchPrompt = '';
-      
+
       if (signal.category === 'ecosystem') {
         searchPrompt = `You are researching companies in the ${signal.anchor} ecosystem that would need office space near ${signal.anchor}'s Gurgaon office.
 
@@ -380,38 +380,37 @@ Format as JSON:
 }`;
       }
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: searchPrompt
+          contents: [{
+            parts: [{
+              text: searchPrompt
+            }]
           }],
-          tools: [{
-            type: "web_search_20250305",
-            name: "web_search"
-          }]
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 4000,
+          }
         })
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API Error:', errorData);
         addProgress(`❌ Error searching ${signal.name}`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
       }
 
       const data = await response.json();
-      
-      const fullText = data.content
-        .filter(item => item.type === 'text')
-        .map(item => item.text)
-        .join('\n');
-      
+
+      const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
       let companiesData = { companies: [] };
       try {
         const jsonMatch = fullText.match(/\{[\s\S]*"companies"[\s\S]*\]/);
@@ -424,7 +423,7 @@ Format as JSON:
 
       if (companiesData.companies && companiesData.companies.length > 0) {
         let validCompanies = 0;
-        
+
         companiesData.companies.forEach(company => {
           if (isCompetitor(company.name)) {
             addProgress(`🛡️ Filtered out competitor: ${company.name}`, 'info');
@@ -434,8 +433,8 @@ Format as JSON:
           setLeads(prev => {
             const existing = prev.find(l => l.name === company.name);
             if (existing) {
-              return prev.map(l => 
-                l.name === company.name 
+              return prev.map(l =>
+                l.name === company.name
                   ? { ...l, signals: [...l.signals, { ...signal, ...company }] }
                   : l
               );
@@ -451,7 +450,7 @@ Format as JSON:
             }
           });
         });
-        
+
         if (validCompanies > 0) {
           addProgress(`✅ Found ${validCompanies} valid leads from ${signal.name}`, 'success');
         } else {
@@ -516,38 +515,37 @@ Format as JSON:
   ]
 }`;
 
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{
-            role: 'user',
-            content: searchPrompt
+          contents: [{
+            parts: [{
+              text: searchPrompt
+            }]
           }],
-          tools: [{
-            type: "web_search_20250305",
-            name: "web_search"
-          }]
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 4000,
+          }
         })
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Gemini API Error:', errorData);
         addProgress(`❌ Error with custom search`, 'error');
         setIsResearching(false);
         return;
       }
 
       const data = await response.json();
-      
-      const fullText = data.content
-        .filter(item => item.type === 'text')
-        .map(item => item.text)
-        .join('\n');
-      
+
+      const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
       let companiesData = { companies: [] };
       try {
         const jsonMatch = fullText.match(/\{[\s\S]*"companies"[\s\S]*\]/);
@@ -560,7 +558,7 @@ Format as JSON:
 
       if (companiesData.companies && companiesData.companies.length > 0) {
         let validCompanies = 0;
-        
+
         companiesData.companies.forEach(company => {
           if (isCompetitor(company.name)) {
             addProgress(`🛡️ Filtered out competitor: ${company.name}`, 'info');
@@ -581,9 +579,9 @@ Format as JSON:
             return prev;
           });
         });
-        
+
         addProgress(`✅ Found ${validCompanies} leads from custom search`, 'success');
-        
+
         setTimeout(() => {
           setLeads(prev => prev.map(lead => ({
             ...lead,
@@ -876,51 +874,46 @@ Format as JSON:
                 <div className="flex gap-2 mb-4 flex-wrap">
                   <button
                     onClick={() => setActiveTab('all')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'all' 
-                        ? 'bg-blue-600 text-white' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'all'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     All ({leads.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('hot')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'hot' 
-                        ? 'bg-red-600 text-white' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'hot'
+                        ? 'bg-red-600 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     🔥 Hot ({leads.filter(l => l.quality?.priority === 'HOT').length})
                   </button>
                   <button
                     onClick={() => setActiveTab('ecosystem')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'ecosystem' 
-                        ? 'bg-purple-600 text-white' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'ecosystem'
+                        ? 'bg-purple-600 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     🔗 Ecosystem ({leads.filter(l => l.category === 'ecosystem').length})
                   </button>
                   <button
                     onClick={() => setActiveTab('hiring')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'hiring' 
-                        ? 'bg-green-600 text-white' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'hiring'
+                        ? 'bg-green-600 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     👥 Hiring ({leads.filter(l => l.category === 'hiring').length})
                   </button>
                   <button
                     onClick={() => setActiveTab('funding')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      activeTab === 'funding' 
-                        ? 'bg-yellow-600 text-white' 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'funding'
+                        ? 'bg-yellow-600 text-white'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    }`}
+                      }`}
                   >
                     💰 Funded ({leads.filter(l => l.category === 'funding').length})
                   </button>
@@ -987,21 +980,21 @@ Format as JSON:
 
                       <div className="border-t border-slate-200 pt-3 mt-3">
                         <div className="grid grid-cols-3 gap-2">
-                          <button 
+                          <button
                             onClick={() => handleSendEmail(lead)}
                             className="col-span-1 text-sm bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
                           >
                             <Mail className="w-4 h-4" />
                             Send Email
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleLinkedInSearch(lead)}
                             className="col-span-1 text-sm bg-[#0077B5] text-white px-4 py-2 rounded hover:bg-[#006399] transition-colors font-medium flex items-center justify-center gap-2"
                           >
                             <Linkedin className="w-4 h-4" />
                             LinkedIn
                           </button>
-                          <button 
+                          <button
                             onClick={() => copyEmailTemplate(lead)}
                             className="col-span-1 text-sm bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-700 transition-colors font-medium flex items-center justify-center gap-2"
                           >
@@ -1034,7 +1027,7 @@ Format as JSON:
                 Send Email Button
               </div>
               <p className="text-sm text-slate-600">
-                Opens your email client (Gmail, Outlook, etc.) with personalized subject and body pre-filled. 
+                Opens your email client (Gmail, Outlook, etc.) with personalized subject and body pre-filled.
                 Email is customized based on lead type (ecosystem, funding, hiring). Just click and send!
               </p>
             </div>
@@ -1044,7 +1037,7 @@ Format as JSON:
                 LinkedIn Button
               </div>
               <p className="text-sm text-slate-600">
-                Opens LinkedIn search for decision makers at the company (HR, Facility Manager, CEO, COO). 
+                Opens LinkedIn search for decision makers at the company (HR, Facility Manager, CEO, COO).
                 Connect with them and send InMail using the personalized message strategy.
               </p>
             </div>
@@ -1054,7 +1047,7 @@ Format as JSON:
                 Copy Email Button
               </div>
               <p className="text-sm text-slate-600">
-                Copies the full personalized email template to clipboard. Paste it into your CRM, sales tool, 
+                Copies the full personalized email template to clipboard. Paste it into your CRM, sales tool,
                 or send via any platform. Perfect for bulk operations.
               </p>
             </div>
