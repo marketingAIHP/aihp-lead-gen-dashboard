@@ -381,7 +381,7 @@ Format as JSON:
       }
 
       const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -875,8 +875,8 @@ Format as JSON:
                   <button
                     onClick={() => setActiveTab('all')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'all'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     All ({leads.length})
@@ -884,8 +884,8 @@ Format as JSON:
                   <button
                     onClick={() => setActiveTab('hot')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'hot'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     🔥 Hot ({leads.filter(l => l.quality?.priority === 'HOT').length})
@@ -893,8 +893,8 @@ Format as JSON:
                   <button
                     onClick={() => setActiveTab('ecosystem')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'ecosystem'
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     🔗 Ecosystem ({leads.filter(l => l.category === 'ecosystem').length})
@@ -902,8 +902,8 @@ Format as JSON:
                   <button
                     onClick={() => setActiveTab('hiring')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'hiring'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-green-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     👥 Hiring ({leads.filter(l => l.category === 'hiring').length})
@@ -911,8 +911,8 @@ Format as JSON:
                   <button
                     onClick={() => setActiveTab('funding')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'funding'
-                        ? 'bg-yellow-600 text-white'
-                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-yellow-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                       }`}
                   >
                     💰 Funded ({leads.filter(l => l.category === 'funding').length})
