@@ -381,7 +381,7 @@ Format as JSON:
       }
 
       const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -516,7 +516,7 @@ Format as JSON:
 }`;
 
       const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
