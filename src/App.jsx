@@ -313,68 +313,83 @@ Website: www.aihp.in`;
       let searchPrompt = '';
 
       if (signal.category === 'ecosystem') {
-        searchPrompt = `You are researching companies in the ${signal.anchor} ecosystem that would need office space near ${signal.anchor}'s Gurgaon office.
+        searchPrompt = `You are a B2B lead researcher specializing in commercial real estate. Find companies in the ${signal.anchor} ecosystem in Gurgaon, India that need office space.
 
-${signal.anchor} Context:
-${anchorTenants.find(a => a.name === signal.anchor)?.location}
+**Context:**
+- ${signal.anchor} is located at: ${anchorTenants.find(a => a.name === signal.anchor)?.location}
+- Target: Companies that benefit from proximity to ${signal.anchor}
 
-Find 5-7 companies that are:
-1. ${signal.anchor} vendors/suppliers (companies that sell TO ${signal.anchor})
-2. ${signal.anchor} technology partners (companies that integrate with ${signal.anchor})
-3. ${signal.anchor} service providers (companies that serve ${signal.anchor} customers)
-4. Companies in ${signal.anchor}'s industry ecosystem
+**Find 4-6 REAL companies that are:**
+1. Direct vendors/suppliers to ${signal.anchor}
+2. Technology partners or system integrators
+3. Service providers in ${signal.anchor}'s value chain
+4. Consulting firms working with ${signal.anchor}
 
-For EACH company, explain:
-- WHY they would want office space near ${signal.anchor}
-- What business reason requires proximity
-- Estimated office space need
+**For EACH company, provide:**
+- Exact company name (verify it's a real company)
+- Industry/sector
+- Specific business relationship with ${signal.anchor}
+- Why proximity matters (concrete business reason)
+- Realistic office space estimate (based on company size)
+- Timeline (based on recent news/hiring/funding)
 
-CRITICAL: Exclude these competitors (workspace providers):
-${competitorList.join(', ')}
+**CRITICAL EXCLUSIONS:**
+- Coworking spaces: ${competitorList.slice(0, 10).join(', ')}
+- Real estate companies
+- Property management firms
 
-Format as JSON:
+**Output ONLY valid JSON (no markdown, no explanation):**
 {
   "companies": [
     {
-      "name": "Company Name",
-      "industry": "Industry",
-      "relationship": "Vendor/Partner/Service Provider/Ecosystem",
-      "proximityReason": "Specific business reason why they need to be near ${signal.anchor}",
-      "estimatedSpace": "10,000-50,000 sq ft" or range,
-      "timeline": "Immediate/1-2 months/3-6 months",
-      "confidence": 0.75
+      "name": "Accenture India",
+      "industry": "IT Consulting",
+      "signals": "Google Cloud partner, expanding Gurgaon team by 200+",
+      "timeline": "Q2 2026",
+      "spaceNeeds": "80,000 sq ft",
+      "employees": "400+"
     }
   ]
 }`;
       } else {
-        searchPrompt = `Search for companies showing expansion signals in Gurgaon using: ${signal.query}
+        searchPrompt = `You are a B2B lead researcher for commercial real estate in Gurgaon, India.
 
-Find 3-5 REAL companies with specific expansion indicators.
+**Research Signal:** ${signal.name}
+**Description:** ${signal.description}
+**Search Context:** ${signal.query}
 
-For each company provide:
-- Company name
-- Industry  
-- Specific signal (what indicates they need office space)
-- Timeline estimate
-- Space requirement estimate
-- Contact strategy
+**Task:** Find 4-6 REAL companies in Gurgaon showing this specific signal.
 
-CRITICAL: EXCLUDE these companies (they are competitors/workspace providers):
-${competitorList.join(', ')}
+**Requirements:**
+1. Only REAL companies (verify they exist)
+2. Must be in Gurgaon or planning Gurgaon expansion
+3. Must show concrete evidence of the signal
+4. Provide specific, verifiable details
+5. Realistic space estimates based on company size
 
-Also EXCLUDE: Any coworking space, workspace provider, or office space leasing company.
+**For EACH company:**
+- Exact company name
+- Industry/sector
+- Specific signal evidence (hiring post, funding round, news article)
+- Timeline (based on actual events)
+- Space needs (realistic estimate)
+- Employee count estimate
 
-Format as JSON:
+**CRITICAL EXCLUSIONS:**
+- Coworking/workspace providers: ${competitorList.slice(0, 10).join(', ')}
+- Real estate companies
+- Property developers
+
+**Output ONLY valid JSON (no markdown, no explanation):**
 {
   "companies": [
     {
-      "name": "Company Name",
-      "industry": "Industry",
-      "signal": "Specific expansion indicator",
-      "timeline": "Immediate/1-2 months/3-6 months",
-      "estimatedSpace": "Size estimate",
-      "contactStrategy": "How to approach",
-      "confidence": 0.7
+      "name": "Zomato",
+      "industry": "Food Tech",
+      "signals": "Hiring Facility Manager for new 50,000 sq ft Gurgaon office, posted Jan 2026",
+      "timeline": "Q2 2026",
+      "spaceNeeds": "50,000 sq ft",
+      "employees": "200+"
     }
   ]
 }`;
@@ -477,32 +492,43 @@ Format as JSON:
     addProgress(`🔍 Custom research: "${customSearch}"...`, 'info');
 
     try {
-      const searchPrompt = `Search for companies in Gurgaon that match this query: ${customSearch}
+      const searchPrompt = `You are a B2B lead researcher for commercial real estate in Gurgaon, India.
 
-Find 3-5 REAL companies that show office space needs.
+**Custom Search Query:** "${customSearch}"
 
-For each company provide:
-- Company name
-- Industry  
-- Why they might need office space
-- Timeline estimate
-- Space requirement estimate
-- Contact strategy
+**Task:** Find 4-6 REAL companies in Gurgaon that match this search query and need office space.
 
-CRITICAL: EXCLUDE these companies (they are competitors/workspace providers):
-${competitorList.join(', ')}
+**Requirements:**
+1. Only REAL companies (verify they exist)
+2. Must be located in or expanding to Gurgaon
+3. Must show concrete office space needs
+4. Provide specific, verifiable details
+5. Match the search query intent
 
-Format as JSON:
+**For EACH company:**
+- Exact company name (real, verifiable)
+- Industry/sector
+- Specific signal showing office space need
+- Timeline (based on actual events/hiring/funding)
+- Realistic space estimate (based on company size)
+- Employee count estimate
+
+**CRITICAL EXCLUSIONS:**
+- Coworking/workspace providers: ${competitorList.slice(0, 10).join(', ')}
+- Real estate companies
+- Property developers
+- Office space leasing companies
+
+**Output ONLY valid JSON (no markdown, no code blocks, no explanation):**
 {
   "companies": [
     {
-      "name": "Company Name",
-      "industry": "Industry",
-      "signal": "Why they need office space",
-      "timeline": "Immediate/1-2 months/3-6 months",
-      "estimatedSpace": "Size estimate",
-      "contactStrategy": "How to approach",
-      "confidence": 0.7
+      "name": "PhonePe",
+      "industry": "Fintech",
+      "signals": "Series C $350M funding, hiring 100+ in Gurgaon",
+      "timeline": "Q2 2026",
+      "spaceNeeds": "70,000 sq ft",
+      "employees": "350+"
     }
   ]
 }`;
