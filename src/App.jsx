@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, Building2, Users, Briefcase, Network, AlertTriangle, Download, Play, Loader, CheckCircle, AlertCircle, Target, Zap, RefreshCw, Mail, Linkedin, Copy, ExternalLink } from 'lucide-react';
+import { Search, TrendingUp, Building2, Users, Briefcase, Network, AlertTriangle, Download, Play, Loader, CheckCircle, AlertCircle, Target, Zap, RefreshCw, Mail, Linkedin, Copy, ExternalLink, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export default function GurgaonLeadIntelligenceDashboard() {
   const [isResearching, setIsResearching] = useState(false);
@@ -11,6 +14,7 @@ export default function GurgaonLeadIntelligenceDashboard() {
   const [activeResearch, setActiveResearch] = useState({});
   const [showEmailPreview, setShowEmailPreview] = useState(null);
   const [emailCopied, setEmailCopied] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Major anchor tenants
   const anchorTenants = [
@@ -291,9 +295,9 @@ Website: www.aihp.in`;
   };
 
   const handleLinkedInSearch = (lead) => {
-    // Search for decision makers at the company
-    const searchQuery = `${lead.name} (HR OR "Human Resources" OR "Facility Manager" OR "Office Manager" OR "Real Estate" OR "Admin" OR CEO OR COO OR "Chief Operating Officer")`;
-    const linkedInUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
+    // Go directly to company's LinkedIn page
+    const companyName = lead.name.replace(/\s+/g, '-').toLowerCase();
+    const linkedInUrl = `https://www.linkedin.com/company/${companyName}`;
     window.open(linkedInUrl, '_blank');
   };
 
@@ -653,6 +657,105 @@ Website: www.aihp.in`;
     a.click();
   };
 
+  // Export to PDF with clickable links
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(30, 58, 138); // Blue
+    doc.text('AIHP Lead Intelligence Report', 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+    doc.text(`Total Leads: ${filteredLeads.length}`, 14, 34);
+
+    // Table data
+    const tableData = filteredLeads.map(lead => [
+      lead.name,
+      lead.industry || 'N/A',
+      lead.signals?.[0]?.signals || lead.signals?.[0]?.signal || 'N/A',
+      lead.spaceNeeds || lead.estimatedSpace || 'N/A',
+      lead.timeline || 'N/A',
+      lead.quality?.priority || 'N/A',
+      `https://www.linkedin.com/company/${lead.name.replace(/\s+/g, '-').toLowerCase()}`
+    ]);
+
+    doc.autoTable({
+      startY: 40,
+      head: [['Company', 'Industry', 'Signal', 'Space Needs', 'Timeline', 'Priority', 'LinkedIn']],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [30, 58, 138], textColor: 255 },
+      columnStyles: {
+        6: { textColor: [37, 99, 235] } // Blue for LinkedIn links
+      },
+      didDrawCell: (data) => {
+        // Make LinkedIn column clickable
+        if (data.column.index === 6 && data.cell.section === 'body') {
+          const link = data.cell.text[0];
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: link });
+        }
+      }
+    });
+
+    doc.save(`aihp-leads-${new Date().toISOString().split('T')[0]}.pdf`);
+    addProgress('📄 Exported to PDF with clickable links', 'success');
+    setShowExportMenu(false);
+  };
+
+  // Export to Excel with clickable links
+  const exportToExcel = () => {
+    const excelData = filteredLeads.map(lead => ({
+      'Company Name': lead.name,
+      'Industry': lead.industry || 'N/A',
+      'Signal': lead.signals?.[0]?.signals || lead.signals?.[0]?.signal || 'N/A',
+      'Space Needs': lead.spaceNeeds || lead.estimatedSpace || 'N/A',
+      'Employees': lead.employees || 'N/A',
+      'Timeline': lead.timeline || 'N/A',
+      'Priority': lead.quality?.priority || 'N/A',
+      'LinkedIn': `https://www.linkedin.com/company/${lead.name.replace(/\s+/g, '-').toLowerCase()}`,
+      'Company Website': `https://www.google.com/search?q=${encodeURIComponent(lead.name + ' official website')}`
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Make LinkedIn and Website columns clickable
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      const linkedinCell = XLSX.utils.encode_cell({ r: R, c: 7 }); // LinkedIn column
+      const websiteCell = XLSX.utils.encode_cell({ r: R, c: 8 }); // Website column
+
+      if (ws[linkedinCell]) {
+        ws[linkedinCell].l = { Target: ws[linkedinCell].v };
+      }
+      if (ws[websiteCell]) {
+        ws[websiteCell].l = { Target: ws[websiteCell].v };
+      }
+    }
+
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 25 }, // Company Name
+      { wch: 20 }, // Industry
+      { wch: 40 }, // Signal
+      { wch: 15 }, // Space Needs
+      { wch: 12 }, // Employees
+      { wch: 12 }, // Timeline
+      { wch: 10 }, // Priority
+      { wch: 50 }, // LinkedIn
+      { wch: 50 }  // Website
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+    XLSX.writeFile(wb, `aihp-leads-${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    addProgress('📊 Exported to Excel with clickable links', 'success');
+    setShowExportMenu(false);
+  };
+
   const filteredLeads = leads.filter(lead => {
     if (activeTab === 'all') return true;
     if (activeTab === 'ecosystem') return lead.category === 'ecosystem';
@@ -782,13 +885,51 @@ Website: www.aihp.in`;
             </button>
             {leads.length > 0 && (
               <>
-                <button
-                  onClick={exportReport}
-                  className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  Export
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu(!showExportMenu)}
+                    className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2"
+                  >
+                    <Download className="w-5 h-5" />
+                    Export
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {showExportMenu && (
+                    <div className="absolute top-full mt-2 right-0 bg-white rounded-lg shadow-2xl border-2 border-slate-200 py-2 min-w-[200px] z-50">
+                      <button
+                        onClick={exportToPDF}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-center gap-3 text-slate-700"
+                      >
+                        <FileText className="w-5 h-5 text-red-600" />
+                        <div>
+                          <div className="font-semibold">Export to PDF</div>
+                          <div className="text-xs text-slate-500">With clickable links</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={exportToExcel}
+                        className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-3 text-slate-700"
+                      >
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                        <div>
+                          <div className="font-semibold">Export to Excel</div>
+                          <div className="text-xs text-slate-500">With clickable links</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={exportReport}
+                        className="w-full px-4 py-3 text-left hover:bg-slate-50 transition-colors flex items-center gap-3 text-slate-700"
+                      >
+                        <Download className="w-5 h-5 text-slate-600" />
+                        <div>
+                          <div className="font-semibold">Export to JSON</div>
+                          <div className="text-xs text-slate-500">Raw data format</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => setLeads([])}
                   className="px-6 py-3 border-2 border-red-600 text-red-600 rounded-lg font-semibold hover:bg-red-50 transition-colors flex items-center gap-2"
