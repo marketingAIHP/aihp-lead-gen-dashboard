@@ -380,21 +380,21 @@ Format as JSON:
 }`;
       }
 
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
       if (!apiKey) {
         addProgress(`❌ API key not configured`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
       }
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'meta/llama-3.1-405b-instruct',
           messages: [{
             role: 'user',
             content: searchPrompt
@@ -406,7 +406,7 @@ Format as JSON:
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('OpenAI API Error:', errorData);
+        console.error('NVIDIA API Error:', errorData);
         addProgress(`❌ Error searching ${signal.name}`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
@@ -520,21 +520,21 @@ Format as JSON:
   ]
 }`;
 
-      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      const apiKey = import.meta.env.VITE_NVIDIA_API_KEY;
       if (!apiKey) {
         addProgress(`❌ API key not configured`, 'error');
         setIsResearching(false);
         return;
       }
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'meta/llama-3.1-405b-instruct',
           messages: [{
             role: 'user',
             content: searchPrompt
@@ -546,7 +546,7 @@ Format as JSON:
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('OpenAI API Error:', errorData);
+        console.error('NVIDIA API Error:', errorData);
         addProgress(`❌ Error with custom search`, 'error');
         setIsResearching(false);
         return;
