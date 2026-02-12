@@ -380,28 +380,33 @@ Format as JSON:
 }`;
       }
 
-      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        addProgress(`❌ API key not configured`, 'error');
+        setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
+        return;
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: searchPrompt
-            }]
+          model: 'gpt-4o-mini',
+          messages: [{
+            role: 'user',
+            content: searchPrompt
           }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 4000,
-          }
+          temperature: 0.7,
+          max_tokens: 4000
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Gemini API Error:', errorData);
+        console.error('OpenAI API Error:', errorData);
         addProgress(`❌ Error searching ${signal.name}`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
@@ -409,7 +414,7 @@ Format as JSON:
 
       const data = await response.json();
 
-      const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const fullText = data.choices?.[0]?.message?.content || '';
 
       let companiesData = { companies: [] };
       try {
@@ -515,28 +520,33 @@ Format as JSON:
   ]
 }`;
 
-      const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || 'AIzaSyAzfKFdpGyWxvN-Vr-HElx-wUPNt94taWs';
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (!apiKey) {
+        addProgress(`❌ API key not configured`, 'error');
+        setIsResearching(false);
+        return;
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: searchPrompt
-            }]
+          model: 'gpt-4o-mini',
+          messages: [{
+            role: 'user',
+            content: searchPrompt
           }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 4000,
-          }
+          temperature: 0.7,
+          max_tokens: 4000
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Gemini API Error:', errorData);
+        console.error('OpenAI API Error:', errorData);
         addProgress(`❌ Error with custom search`, 'error');
         setIsResearching(false);
         return;
@@ -544,7 +554,7 @@ Format as JSON:
 
       const data = await response.json();
 
-      const fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const fullText = data.choices?.[0]?.message?.content || '';
 
       let companiesData = { companies: [] };
       try {
