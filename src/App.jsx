@@ -662,50 +662,64 @@ Website: www.aihp.in`;
 
   // Export to PDF with clickable links
   const exportToPDF = () => {
-    const doc = new jsPDF();
+    try {
+      console.log('Starting PDF export...');
+      console.log('Filtered leads:', filteredLeads.length);
 
-    // Title
-    doc.setFontSize(18);
-    doc.setTextColor(30, 58, 138); // Blue
-    doc.text('AIHP Lead Intelligence Report', 14, 20);
+      const doc = new jsPDF();
 
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
-    doc.text(`Total Leads: ${filteredLeads.length}`, 14, 34);
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(30, 58, 138); // Blue
+      doc.text('AIHP Lead Intelligence Report', 14, 20);
 
-    // Table data
-    const tableData = filteredLeads.map(lead => [
-      lead.name,
-      lead.industry || 'N/A',
-      lead.signals?.[0]?.signals || lead.signals?.[0]?.signal || 'N/A',
-      lead.spaceNeeds || lead.estimatedSpace || 'N/A',
-      lead.timeline || 'N/A',
-      lead.quality?.priority || 'N/A',
-      `https://www.linkedin.com/company/${lead.name.replace(/\s+/g, '-').toLowerCase()}`
-    ]);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+      doc.text(`Total Leads: ${filteredLeads.length}`, 14, 34);
 
-    doc.autoTable({
-      startY: 40,
-      head: [['Company', 'Industry', 'Signal', 'Space Needs', 'Timeline', 'Priority', 'LinkedIn']],
-      body: tableData,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [30, 58, 138], textColor: 255 },
-      columnStyles: {
-        6: { textColor: [37, 99, 235] } // Blue for LinkedIn links
-      },
-      didDrawCell: (data) => {
-        // Make LinkedIn column clickable
-        if (data.column.index === 6 && data.cell.section === 'body') {
-          const link = data.cell.text[0];
-          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: link });
+      // Table data
+      const tableData = filteredLeads.map(lead => [
+        lead.name,
+        lead.industry || 'N/A',
+        lead.signals?.[0]?.signals || lead.signals?.[0]?.signal || 'N/A',
+        lead.spaceNeeds || lead.estimatedSpace || 'N/A',
+        lead.timeline || 'N/A',
+        lead.quality?.priority || 'N/A',
+        `https://www.linkedin.com/company/${lead.name.replace(/\s+/g, '-').toLowerCase()}`
+      ]);
+
+      console.log('Table data prepared, rows:', tableData.length);
+
+      doc.autoTable({
+        startY: 40,
+        head: [['Company', 'Industry', 'Signal', 'Space Needs', 'Timeline', 'Priority', 'LinkedIn']],
+        body: tableData,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [30, 58, 138], textColor: 255 },
+        columnStyles: {
+          6: { textColor: [37, 99, 235] } // Blue for LinkedIn links
+        },
+        didDrawCell: (data) => {
+          // Make LinkedIn column clickable
+          if (data.column.index === 6 && data.cell.section === 'body') {
+            const link = data.cell.text[0];
+            doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: link });
+          }
         }
-      }
-    });
+      });
 
-    doc.save(`aihp-leads-${new Date().toISOString().split('T')[0]}.pdf`);
-    addProgress('📄 Exported to PDF with clickable links', 'success');
-    setShowExportMenu(false);
+      console.log('PDF generated, saving...');
+      doc.save(`aihp-leads-${new Date().toISOString().split('T')[0]}.pdf`);
+      console.log('PDF saved successfully!');
+
+      addProgress('📄 Exported to PDF with clickable links', 'success');
+      setShowExportMenu(false);
+    } catch (error) {
+      console.error('PDF Export Error:', error);
+      addProgress(`❌ PDF export failed: ${error.message}`, 'error');
+      alert(`PDF Export Error: ${error.message}\n\nCheck console for details.`);
+    }
   };
 
   // Export to Excel with clickable links
