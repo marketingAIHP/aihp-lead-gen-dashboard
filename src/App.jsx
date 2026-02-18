@@ -1113,11 +1113,14 @@ Website: www.aihp.in`;
                               </span>
                             )}
                           </div>
-                          <div className="text-sm text-slate-600 mb-1">{lead.industry}</div>
+                          <div className="text-sm text-slate-500 mb-1">
+                            {lead.industry || 'Technology'}
+                            {lead.employees && <span className="ml-2">• {lead.employees} employees</span>}
+                          </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-blue-600">{lead.timeline}</div>
-                          <div className="text-xs text-slate-500">{lead.estimatedSpace}</div>
+                          <div className="text-sm font-semibold text-blue-600">{lead.timeline || 'N/A'}</div>
+                          <div className="text-xs text-slate-500">{lead.spaceNeeds || lead.estimatedSpace || ''}</div>
                         </div>
                       </div>
 
@@ -1131,10 +1134,41 @@ Website: www.aihp.in`;
                         </div>
                       )}
 
-                      {lead.signal && (
-                        <div className="bg-slate-50 rounded p-3 mb-3">
-                          <div className="text-sm font-medium text-slate-700 mb-1">Expansion Signal:</div>
-                          <div className="text-sm text-slate-600">{lead.signal}</div>
+                      {/* Expansion Signal - Detailed Description */}
+                      {(() => {
+                        const signalText = lead.signal
+                          || lead.signals?.[0]?.signals
+                          || lead.signals?.[0]?.signal
+                          || '';
+                        return signalText ? (
+                          <div className="bg-slate-50 rounded p-3 mb-3">
+                            <div className="text-sm font-semibold text-slate-800 mb-1">📊 Expansion Signal:</div>
+                            <div className="text-sm text-slate-600 leading-relaxed">{signalText}</div>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Space & Timeline Details */}
+                      {(lead.spaceNeeds || lead.estimatedSpace || lead.employees) && (
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                          {(lead.spaceNeeds || lead.estimatedSpace) && (
+                            <div className="bg-blue-50 rounded p-2 text-center">
+                              <div className="text-xs text-blue-600 font-semibold">Space Needs</div>
+                              <div className="text-sm font-bold text-blue-800">{lead.spaceNeeds || lead.estimatedSpace}</div>
+                            </div>
+                          )}
+                          {lead.employees && (
+                            <div className="bg-green-50 rounded p-2 text-center">
+                              <div className="text-xs text-green-600 font-semibold">Employees</div>
+                              <div className="text-sm font-bold text-green-800">{lead.employees}</div>
+                            </div>
+                          )}
+                          {lead.timeline && (
+                            <div className="bg-orange-50 rounded p-2 text-center">
+                              <div className="text-xs text-orange-600 font-semibold">Timeline</div>
+                              <div className="text-sm font-bold text-orange-800">{lead.timeline}</div>
+                            </div>
+                          )}
                         </div>
                       )}
 
