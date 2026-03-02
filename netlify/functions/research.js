@@ -47,7 +47,8 @@ export const handler = async (event, context) => {
         }
 
         // Get API key from environment variable (set in Netlify dashboard)
-        const apiKey = process.env.NVIDIA_API_KEY;
+        // Falls back to VITE_NVIDIA_API_KEY for compatibility with .env
+        const apiKey = process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY;
 
         if (!apiKey) {
             console.error('CRITICAL: NVIDIA_API_KEY environment variable not set!');
