@@ -399,9 +399,8 @@ Website: www.aihp.in`;
 }`;
       }
 
-      // Call backend API (works on Render and locally)
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/research`, {
+      // Use relative URL — Netlify redirect handles prod, Vite proxy handles dev
+      const response = await fetch('/api/research', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -539,9 +538,8 @@ Website: www.aihp.in`;
 }`;
 
 
-      // Call backend API (works on Render and locally)
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${apiUrl}/api/research`, {
+      // Use relative URL — Netlify redirect handles prod, Vite proxy handles dev
+      const response = await fetch('/api/research', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

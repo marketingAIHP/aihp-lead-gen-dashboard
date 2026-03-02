@@ -11,5 +11,13 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      // In dev, forward /api/* to the local Express backend on port 3001
+      // On Netlify (production), netlify.toml redirects handle this instead
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
 })
