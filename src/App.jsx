@@ -399,8 +399,12 @@ Website: www.aihp.in`;
 }`;
       }
 
-      // Use relative URL — Netlify redirect handles prod, Vite proxy handles dev
-      const response = await fetch('/api/research', {
+      // Use relative path for production (Render), localhost for dev
+      const apiUrl = window.location.hostname === 'localhost'
+        ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
+        : '';
+
+      const response = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -411,11 +415,21 @@ Website: www.aihp.in`;
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: 'Unknown server error', status: response.status };
+        }
         console.error('API Error:', errorData);
-        addProgress(`❌ Error searching ${signal.name}`, 'error');
+        addProgress(`❌ Error searching ${signal.name}: ${errorData.error || response.statusText}`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
@@ -538,8 +552,12 @@ Website: www.aihp.in`;
 }`;
 
 
-      // Use relative URL — Netlify redirect handles prod, Vite proxy handles dev
-      const response = await fetch('/api/research', {
+      // Use relative path for production (Render), localhost for dev
+      const apiUrl = window.location.hostname === 'localhost'
+        ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
+        : '';
+
+      const response = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -550,11 +568,21 @@ Website: www.aihp.in`;
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: 'Unknown server error', status: response.status };
+        }
         console.error('API Error:', errorData);
-        addProgress(`❌ Error with custom search`, 'error');
+        addProgress(`❌ Error with custom search: ${errorData.error || response.statusText}`, 'error');
         setIsResearching(false);
         return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();

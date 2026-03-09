@@ -61,7 +61,12 @@ app.post('/api/research', async (req, res) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { detail: 'Could not parse error response from NVIDIA' };
+            }
             console.error('NVIDIA API Error:', response.status, errorData);
             return res.status(response.status).json({
                 error: 'NVIDIA API error',
