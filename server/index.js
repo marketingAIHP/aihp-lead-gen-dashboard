@@ -15,36 +15,33 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve built React frontend from ../dist
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
-
-// Health check endpoint
+// 1. Health check (highest priority)
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// NVIDIA API research endpoint
+// 2. NVIDIA API research endpoint
 app.post('/api/research', async (req, res) => {
+    console.log(`[${new Date().toISOString()}] Received research request`);
     try {
         const { prompt } = req.body;
 
         if (!prompt) {
+            console.log('Error: Prompt missing in request body');
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        // Get API key — support both naming conventions
         const apiKey = process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY;
 
         if (!apiKey) {
-            console.error('NVIDIA_API_KEY not configured');
+            console.error('CRITICAL: NVIDIA_API_KEY not configured in environment variables');
             return res.status(500).json({
                 error: 'API key not configured',
-                hint: 'Add NVIDIA_API_KEY to Render environment variables'
+                hint: 'Check Render dashboard Environment Variables'
             });
         }
 
-        console.log('Calling NVIDIA API...');
+        console.log('Forwarding request to NVIDIA API...');
 
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
             method: 'POST',
@@ -76,11 +73,11 @@ app.post('/api/research', async (req, res) => {
         }
 
         const data = await response.json();
-        console.log('NVIDIA API success!');
+        console.log('NVIDIA API Response successful');
         res.json(data);
 
     } catch (error) {
-        console.error('Server error:', error.message);
+        console.error('SERVER FATAL ERROR:', error.message);
         res.status(500).json({
             error: 'Internal server error',
             message: error.message
@@ -88,7 +85,11 @@ app.post('/api/research', async (req, res) => {
     }
 });
 
-// SPA fallback — serve index.html for all non-API routes
+// 3. Serve static files
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
+
+// 4. SPA fallback (matches everything else)
 app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
 });

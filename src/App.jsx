@@ -429,6 +429,10 @@ Website: www.aihp.in`;
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Unexpected response content type:', contentType);
+        console.error('Response preview:', text.substring(0, 200));
+        addProgress(`❌ Error: Server returned HTML. Check your Render logs.`, 'error');
         throw new Error('Server returned non-JSON response');
       }
 
@@ -582,6 +586,10 @@ Website: www.aihp.in`;
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Unexpected response content type:', contentType);
+        console.error('Response preview:', text.substring(0, 200));
+        addProgress(`❌ Error: Server returned HTML.`, 'error');
         throw new Error('Server returned non-JSON response');
       }
 
