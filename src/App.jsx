@@ -605,7 +605,21 @@ Website: www.aihp.in`;
           errorData = { error: 'Unknown server error', status: response.status };
         }
         console.error('API Error:', errorData);
-        addProgress(`❌ Error: Server returned ${response.status} (non-JSON).`, 'error');
+        addProgress(`❌ Error searching: ${errorData.error || response.statusText}`, 'error');
+        setIsResearching(false);
+        return;
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Unexpected response content type:', contentType);
+        console.error('HTTP Status:', response.status);
+        if (window.location.hostname.includes('dashboard-1.onrender.com')) {
+          addProgress(`❌ ERROR: You are using the WRONG URL. Please use the Node Service URL (without -1).`, 'error');
+        } else {
+          addProgress(`❌ Error: Server returned ${response.status} (non-JSON).`, 'error');
+        }
         throw new Error(`Server returned non-JSON response (${response.status})`);
       }
 
