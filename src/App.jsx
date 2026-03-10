@@ -400,9 +400,11 @@ Website: www.aihp.in`;
       }
 
       // Use relative path for production (Render), localhost for dev
-      const apiUrl = window.location.hostname === 'localhost'
-        ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
-        : '';
+      const isLocal = window.location.hostname === 'localhost';
+      const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
+
+      console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
+      console.log(`[DIAGNOSTIC] Calling API: ${apiUrl}/api/research`);
 
       const response = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',
@@ -558,9 +560,11 @@ Website: www.aihp.in`;
 
 
       // Use relative path for production (Render), localhost for dev
-      const apiUrl = window.location.hostname === 'localhost'
-        ? (import.meta.env.VITE_API_URL || 'http://localhost:3001')
-        : '';
+      const isLocal = window.location.hostname === 'localhost';
+      const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
+
+      console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
+      console.log(`[DIAGNOSTIC] Calling API URL: ${apiUrl}/api/research`);
 
       const response = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',

@@ -22,21 +22,29 @@ try {
     console.log(`[DEBUG] Error listing directories: ${e.message}`);
 }
 
-// Robustly find dist folder
-let distPath = path.join(__dirname, '..', 'dist');
-if (!existsSync(distPath)) {
-    console.log(`[DEBUG] dist not found at ${distPath}, checking current folder...`);
-    distPath = path.join(__dirname, 'dist');
-    if (!existsSync(distPath)) {
-        console.log(`[DEBUG] dist not found at ${distPath}, checking root...`);
-        distPath = path.join(process.cwd(), 'dist');
+// Exhaustive search for dist folder
+const possibleDistPaths = [
+    path.join(__dirname, '..', 'dist'),          // Standard: ../dist
+    path.join(__dirname, 'dist'),               // Fallback 1: ./dist
+    path.join(process.cwd(), 'dist'),           // Fallback 2: cwd/dist
+    path.join(process.cwd(), '..', 'dist'),      // Fallback 3: cwd/../dist
+    '/opt/render/project/src/dist'              // Render Specific absolute path
+];
+
+let distPath = '';
+for (const p of possibleDistPaths) {
+    console.log(`[DEBUG] Checking for dist at: ${p}`);
+    if (existsSync(p)) {
+        distPath = p;
+        console.log(`[DEBUG] FOUND dist folder at: ${p}`);
+        break;
     }
 }
-console.log(`[DEBUG] Resolved distPath: ${distPath}`);
-if (existsSync(distPath)) {
-    console.log(`[DEBUG] dist/index.html exists: ${existsSync(path.join(distPath, 'index.html'))}`);
-} else {
-    console.error(`[CRITICAL] dist folder NOT FOUND anywhere!`);
+
+if (!distPath) {
+    console.error(`[CRITICAL] dist folder NOT FOUND anywhere! Checked: ${possibleDistPaths.join(', ')}`);
+    // Default to something so it doesn't crash, but sends 404
+    distPath = path.join(__dirname, '..', 'dist');
 }
 
 // Middleware to log all requests
