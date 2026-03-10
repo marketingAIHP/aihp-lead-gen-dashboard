@@ -407,11 +407,9 @@ Website: www.aihp.in`;
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
       console.log(`[DIAGNOSTIC] Fetching URL: ${fullFetchUrl}`);
 
-      // Detect if the app is hosted on a static site without an API backend
-      if (!apiUrl && !isLocal) {
-        addProgress(`❌ ERROR: This app is hosted on a static site without an API backend. Please deploy the Node.js API service.`, 'error');
-        setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
-        return;
+      // Optional: Alert the user if they are on a known static URL (ending in -1)
+      if (window.location.hostname.includes('-1.onrender.com')) {
+        addProgress(`⚠️ WARNING: You are visiting the Static Site URL. Some features may not work. Please use the Web Service URL.`, 'warning');
       }
 
       const response = await fetch(fullFetchUrl, {
@@ -580,11 +578,9 @@ Website: www.aihp.in`;
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
       console.log(`[DIAGNOSTIC] Calling API URL: ${fullFetchUrl}`);
 
-      // Detect if the app is hosted on a static site without an API backend
-      if (!apiUrl && !isLocal) {
-        addProgress(`❌ ERROR: This app is hosted on a static site without an API backend. Please deploy the Node.js API service.`, 'error');
-        setIsResearching(false);
-        return;
+      // Optional: Alert the user if they are on a known static URL (ending in -1)
+      if (window.location.hostname.includes('-1.onrender.com')) {
+        addProgress(`⚠️ WARNING: You are visiting the Static Site URL. Some features may not work.`, 'warning');
       }
 
       const response = await fetch(`${apiUrl}/api/research`, {
