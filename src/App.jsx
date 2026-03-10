@@ -402,11 +402,19 @@ Website: www.aihp.in`;
       // Use relative path for production (Render), localhost for dev
       const isLocal = window.location.hostname === 'localhost';
       const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
+      const fullFetchUrl = `${apiUrl}/api/research`;
 
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
-      console.log(`[DIAGNOSTIC] Calling API: ${apiUrl}/api/research`);
+      console.log(`[DIAGNOSTIC] Fetching URL: ${fullFetchUrl}`);
 
-      const response = await fetch(`${apiUrl}/api/research`, {
+      // Detect if the app is hosted on a static site without an API backend
+      if (!apiUrl && !isLocal) {
+        addProgress(`❌ ERROR: This app is hosted on a static site without an API backend. Please deploy the Node.js API service.`, 'error');
+        setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
+        return;
+      }
+
+      const response = await fetch(fullFetchUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -435,7 +443,12 @@ Website: www.aihp.in`;
         console.error('Unexpected response content type:', contentType);
         console.error('HTTP Status:', response.status);
         console.error('Response preview:', text.substring(0, 200));
-        addProgress(`❌ Error: Server returned ${response.status} (non-JSON). Check Render logs.`, 'error');
+
+        if (window.location.hostname.includes('dashboard-1.onrender.com')) {
+          addProgress(`❌ ERROR: You are using the WRONG URL. Please use the Node Service URL (without -1).`, 'error');
+        } else {
+          addProgress(`❌ Error: Server returned ${response.status} (non-JSON). Check Render logs.`, 'error');
+        }
         throw new Error(`Server returned non-JSON response (${response.status})`);
       }
 
@@ -562,9 +575,17 @@ Website: www.aihp.in`;
       // Use relative path for production (Render), localhost for dev
       const isLocal = window.location.hostname === 'localhost';
       const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
+      const fullFetchUrl = `${apiUrl}/api/research`;
 
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
-      console.log(`[DIAGNOSTIC] Calling API URL: ${apiUrl}/api/research`);
+      console.log(`[DIAGNOSTIC] Calling API URL: ${fullFetchUrl}`);
+
+      // Detect if the app is hosted on a static site without an API backend
+      if (!apiUrl && !isLocal) {
+        addProgress(`❌ ERROR: This app is hosted on a static site without an API backend. Please deploy the Node.js API service.`, 'error');
+        setIsResearching(false);
+        return;
+      }
 
       const response = await fetch(`${apiUrl}/api/research`, {
         method: 'POST',

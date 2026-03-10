@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/index.js",
-    "build:render": "npm run build"
+    "build:render": "npm install && npm run build"
   },
   "dependencies": {
     "jspdf": "^4.1.0",
@@ -18,7 +18,10 @@
     "openai": "^6.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.4"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

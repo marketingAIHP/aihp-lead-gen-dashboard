@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3001;
 
 // Debug: List directory structure to help find dist folder on Render
 import { readdirSync, existsSync } from 'fs';
+console.log(`[SERVICE] DASHBOARD-BACKEND-NODE`);
 console.log(`[DEBUG] Current working directory: ${process.cwd()}`);
 console.log(`[DEBUG] __dirname: ${__dirname}`);
 try {
@@ -153,7 +154,13 @@ app.get('*', (req, res) => {
     if (existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        res.status(404).send(`Frontend not built. Looking for it at: ${indexPath}`);
+        res.status(404).send(`
+            <h1>Frontend Not Built</h1>
+            <p>The backend is running, but the frontend files are missing.</p>
+            <p>Checked at: ${indexPath}</p>
+            <hr>
+            <p><b>Diagnostic:</b> If you are seeing this, your Render Build Command should be: <code>npm install && npm run build</code></p>
+        `);
     }
 });
 
