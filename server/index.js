@@ -11,13 +11,58 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
+// Debug: List directory structure to help find dist folder on Render
+import { readdirSync, existsSync } from 'fs';
+console.log(`[DEBUG] Current working directory: ${process.cwd()}`);
+console.log(`[DEBUG] __dirname: ${__dirname}`);
+try {
+    console.log(`[DEBUG] Root contents:`, readdirSync(path.join(__dirname, '..')));
+    console.log(`[DEBUG] Current folder contents:`, readdirSync(__dirname));
+} catch (e) {
+    console.log(`[DEBUG] Error listing directories: ${e.message}`);
+}
+
+// Robustly find dist folder
+let distPath = path.join(__dirname, '..', 'dist');
+if (!existsSync(distPath)) {
+    console.log(`[DEBUG] dist not found at ${distPath}, checking current folder...`);
+    distPath = path.join(__dirname, 'dist');
+    if (!existsSync(distPath)) {
+        console.log(`[DEBUG] dist not found at ${distPath}, checking root...`);
+        distPath = path.join(process.cwd(), 'dist');
+    }
+}
+console.log(`[DEBUG] Resolved distPath: ${distPath}`);
+if (existsSync(distPath)) {
+    console.log(`[DEBUG] dist/index.html exists: ${existsSync(path.join(distPath, 'index.html'))}`);
+} else {
+    console.error(`[CRITICAL] dist folder NOT FOUND anywhere!`);
+}
+
+// Middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 app.use(cors());
 app.use(express.json());
 
 // 1. Health check (highest priority)
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
+});
+
+app.get('/api/ping', (req, res) => {
+    res.json({
+        status: 'ok',
+        time: new Date().toISOString(),
+        env: {
+            NODE_ENV: process.env.NODE_ENV,
+            HAS_NVIDIA_KEY: !!(process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY)
+        },
+        distPath
+    });
 });
 
 // 2. NVIDIA API research endpoint
@@ -85,17 +130,36 @@ app.post('/api/research', async (req, res) => {
     }
 });
 
-// 3. Serve static files
-const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
-
-// 4. SPA fallback (matches everything else)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
+// 3. Catch-all for undefined API routes (prevent fallback to index.html)
+app.all('/api/*', (req, res) => {
+    console.log(`[${new Date().toISOString()}] 404 API Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({ error: 'API route not found' });
 });
 
-app.listen(PORT, () => {
+// 4. Serve static files
+app.use(express.static(distPath));
+
+// 5. SPA fallback (matches everything else)
+app.get('*', (req, res) => {
+    const indexPath = path.join(distPath, 'index.html');
+    if (existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.status(404).send(`Frontend not built. Looking for it at: ${indexPath}`);
+    }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📡 API: http://localhost:${PORT}/api/research`);
     console.log(`🌐 Frontend: http://localhost:${PORT}`);
+});
+
+// Global error handlers for better debugging on Render
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception thrown:', err);
 });

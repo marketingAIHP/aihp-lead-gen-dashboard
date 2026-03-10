@@ -431,9 +431,10 @@ Website: www.aihp.in`;
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Unexpected response content type:', contentType);
+        console.error('HTTP Status:', response.status);
         console.error('Response preview:', text.substring(0, 200));
-        addProgress(`❌ Error: Server returned HTML. Check your Render logs.`, 'error');
-        throw new Error('Server returned non-JSON response');
+        addProgress(`❌ Error: Server returned ${response.status} (non-JSON). Check Render logs.`, 'error');
+        throw new Error(`Server returned non-JSON response (${response.status})`);
       }
 
       const data = await response.json();
@@ -588,9 +589,10 @@ Website: www.aihp.in`;
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('Unexpected response content type:', contentType);
+        console.error('HTTP Status:', response.status);
         console.error('Response preview:', text.substring(0, 200));
-        addProgress(`❌ Error: Server returned HTML.`, 'error');
-        throw new Error('Server returned non-JSON response');
+        addProgress(`❌ Error: Server returned ${response.status} (non-JSON).`, 'error');
+        throw new Error(`Server returned non-JSON response (${response.status})`);
       }
 
       const data = await response.json();
