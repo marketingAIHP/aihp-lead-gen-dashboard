@@ -78,12 +78,19 @@ app.get('/api/ping', (req, res) => {
 app.post('/api/research', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Received research request`);
     try {
-        const { prompt } = req.body;
+        const { prompt, requestId } = req.body;
 
         if (!prompt) {
             console.log('Error: Prompt missing in request body');
             return res.status(400).json({ error: 'Prompt is required' });
         }
+
+        res.set({
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'Surrogate-Control': 'no-store'
+        });
 
         const apiKey = process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY;
 
@@ -95,7 +102,7 @@ app.post('/api/research', async (req, res) => {
             });
         }
 
-        console.log('Forwarding request to NVIDIA API...');
+        console.log(`Forwarding request to NVIDIA API${requestId ? ` (requestId=${requestId})` : ''}...`);
 
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
             method: 'POST',

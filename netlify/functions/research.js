@@ -32,7 +32,7 @@ export const handler = async (event, context) => {
 
     try {
         // Parse the request body
-        const { prompt } = JSON.parse(event.body);
+        const { prompt, requestId } = JSON.parse(event.body);
 
         if (!prompt) {
             console.log('Error: No prompt provided');
@@ -66,7 +66,7 @@ export const handler = async (event, context) => {
             };
         }
 
-        console.log('Calling NVIDIA API...');
+        console.log(`Calling NVIDIA API${requestId ? ` (requestId=${requestId})` : ''}...`);
 
         // Call NVIDIA API from the server (no CORS issues here!)
         const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
@@ -112,7 +112,11 @@ export const handler = async (event, context) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type'
+                'Access-Control-Allow-Headers': 'Content-Type',
+                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0',
+                'Surrogate-Control': 'no-store'
             },
             body: JSON.stringify(data)
         };

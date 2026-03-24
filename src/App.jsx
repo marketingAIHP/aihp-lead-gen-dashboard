@@ -132,6 +132,36 @@ export default function GurgaonLeadIntelligenceDashboard() {
     }]);
   };
 
+  const buildRequestMeta = () => {
+    const now = new Date();
+    const requestId = `${now.getTime()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    return {
+      requestId,
+      generatedAt: now.toISOString()
+    };
+  };
+
+  const parseCompaniesResponse = (fullText) => {
+    if (!fullText) return { companies: [] };
+
+    try {
+      const fencedJson = fullText.match(/```json\s*([\s\S]*?)\s*```/i);
+      if (fencedJson?.[1]) {
+        return JSON.parse(fencedJson[1]);
+      }
+
+      const rawJson = fullText.match(/\{[\s\S]*"companies"[\s\S]*\}/);
+      if (rawJson?.[0]) {
+        return JSON.parse(rawJson[0]);
+      }
+    } catch (e) {
+      console.log('Could not parse JSON response', e);
+    }
+
+    return { companies: [] };
+  };
+
   const isCompetitor = (companyName) => {
     const lowerName = companyName.toLowerCase();
     return competitorList.some(competitor =>
@@ -314,6 +344,7 @@ Website: www.aihp.in`;
     addProgress(`🔍 Starting research: ${signal.name}...`, 'info');
 
     try {
+      const { requestId, generatedAt } = buildRequestMeta();
       let searchPrompt = '';
 
       if (signal.category === 'ecosystem') {
@@ -342,16 +373,21 @@ Website: www.aihp.in`;
 - Real estate companies
 - Property management firms
 
+**Run Metadata:**
+- Request ID: ${requestId}
+- Generated At: ${generatedAt}
+- Treat this as a fresh run. Do not reuse earlier sample companies unless they are independently the best current matches.
+
 **Output ONLY valid JSON (no markdown, no explanation):**
 {
   "companies": [
     {
-      "name": "Accenture India",
-      "industry": "IT Consulting",
-      "signals": "Google Cloud partner, expanding Gurgaon team by 200+",
-      "timeline": "Q2 2026",
-      "spaceNeeds": "80,000 sq ft",
-      "employees": "400+"
+      "name": "<company name>",
+      "industry": "<industry>",
+      "signals": "<specific signal evidence>",
+      "timeline": "<timeline>",
+      "spaceNeeds": "<space estimate>",
+      "employees": "<employee estimate>"
     }
   ]
 }`;
@@ -384,16 +420,21 @@ Website: www.aihp.in`;
 - Real estate companies
 - Property developers
 
+**Run Metadata:**
+- Request ID: ${requestId}
+- Generated At: ${generatedAt}
+- Treat this as a fresh run. Do not repeat placeholder or example companies from earlier runs unless current evidence justifies them.
+
 **Output ONLY valid JSON (no markdown, no explanation):**
 {
   "companies": [
     {
-      "name": "Zomato",
-      "industry": "Food Tech",
-      "signals": "Hiring Facility Manager for new 50,000 sq ft Gurgaon office, posted Jan 2026",
-      "timeline": "Q2 2026",
-      "spaceNeeds": "50,000 sq ft",
-      "employees": "200+"
+      "name": "<company name>",
+      "industry": "<industry>",
+      "signals": "<specific signal evidence>",
+      "timeline": "<timeline>",
+      "spaceNeeds": "<space estimate>",
+      "employees": "<employee estimate>"
     }
   ]
 }`;
@@ -416,9 +457,13 @@ Website: www.aihp.in`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         },
+        cache: 'no-store',
         body: JSON.stringify({
-          prompt: searchPrompt
+          prompt: searchPrompt,
+          requestId
         })
       });
 
@@ -454,15 +499,7 @@ Website: www.aihp.in`;
 
       const fullText = data.choices?.[0]?.message?.content || '';
 
-      let companiesData = { companies: [] };
-      try {
-        const jsonMatch = fullText.match(/\{[\s\S]*"companies"[\s\S]*\]/);
-        if (jsonMatch) {
-          companiesData = JSON.parse(jsonMatch[0] + '}');
-        }
-      } catch (e) {
-        console.log('Could not parse JSON');
-      }
+      const companiesData = parseCompaniesResponse(fullText);
 
       if (companiesData.companies && companiesData.companies.length > 0) {
         let validCompanies = 0;
@@ -528,6 +565,7 @@ Website: www.aihp.in`;
     addProgress(`🔍 Custom research: "${customSearch}"...`, 'info');
 
     try {
+      const { requestId, generatedAt } = buildRequestMeta();
       const searchPrompt = `You are a B2B lead researcher for commercial real estate in Gurgaon, India.
 
 **Custom Search Query:** "${customSearch}"
@@ -555,16 +593,21 @@ Website: www.aihp.in`;
 - Property developers
 - Office space leasing companies
 
+**Run Metadata:**
+- Request ID: ${requestId}
+- Generated At: ${generatedAt}
+- Treat this as a fresh run. Do not repeat placeholder or prior-run companies unless current evidence supports them.
+
 **Output ONLY valid JSON (no markdown, no code blocks, no explanation):**
 {
   "companies": [
     {
-      "name": "PhonePe",
-      "industry": "Fintech",
-      "signals": "Series C $350M funding, hiring 100+ in Gurgaon",
-      "timeline": "Q2 2026",
-      "spaceNeeds": "70,000 sq ft",
-      "employees": "350+"
+      "name": "<company name>",
+      "industry": "<industry>",
+      "signals": "<specific signal evidence>",
+      "timeline": "<timeline>",
+      "spaceNeeds": "<space estimate>",
+      "employees": "<employee estimate>"
     }
   ]
 }`;
@@ -587,9 +630,13 @@ Website: www.aihp.in`;
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         },
+        cache: 'no-store',
         body: JSON.stringify({
-          prompt: searchPrompt
+          prompt: searchPrompt,
+          requestId
         })
       });
 
@@ -623,15 +670,7 @@ Website: www.aihp.in`;
 
       const fullText = data.choices?.[0]?.message?.content || '';
 
-      let companiesData = { companies: [] };
-      try {
-        const jsonMatch = fullText.match(/\{[\s\S]*"companies"[\s\S]*\]/);
-        if (jsonMatch) {
-          companiesData = JSON.parse(jsonMatch[0] + '}');
-        }
-      } catch (e) {
-        console.log('Could not parse JSON');
-      }
+      const companiesData = parseCompaniesResponse(fullText);
 
       if (companiesData.companies && companiesData.companies.length > 0) {
         let validCompanies = 0;
@@ -678,6 +717,8 @@ Website: www.aihp.in`;
   };
 
   const runFullResearch = async () => {
+    setLeads([]);
+    setResearchProgress([]);
     setIsResearching(true);
     addProgress('🚀 Starting full AI research scan...', 'info');
     addProgress('🛡️ Filtering out competitors (Table Space, WeWork, etc.)', 'info');
