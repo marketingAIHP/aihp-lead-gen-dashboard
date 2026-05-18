@@ -17,10 +17,13 @@ AI-powered lead research dashboard for finding companies looking for office spac
 ### Recommended Vercel Setup
 
 1. Import the repository into Vercel.
-2. Keep the build command as `npm run build`.
-3. Add `OPENROUTER_API_KEY` in Project Settings → Environment Variables.
-4. Optionally add `OPENROUTER_MODEL` if you want a model other than the default `openai/gpt-4o-mini`.
-5. Redeploy so Vercel publishes both the static Vite app and the `/api/research` function.
+2. Keep the project root as the repository root.
+3. Keep the build command as `npm run build`.
+4. Keep the output directory as `dist`.
+5. Do not set the project root to `dist`, or Vercel will miss the `api/` functions.
+6. Add `OPENROUTER_API_KEY` in Project Settings → Environment Variables.
+7. Optionally add `OPENROUTER_MODEL` if you want a model other than the default `openai/gpt-4o-mini`.
+8. Redeploy so Vercel publishes both the static Vite app and the `/api/research` function.
 
 The repo now includes Vercel API routes in `api/`, so the deployed frontend can call `/api/research` directly on the same domain.
 
@@ -193,7 +196,8 @@ This means the deployment does not include the Vercel function yet.
 
 1. Make sure the repo contains `api/research.js`
 2. Confirm `OPENROUTER_API_KEY` is set in Vercel
-3. Trigger a fresh redeploy
+3. Confirm the Vercel project root is the repo root, not `dist`
+4. Trigger a fresh redeploy
 
 ### Email button not working:
 

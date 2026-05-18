@@ -9,7 +9,7 @@ const researchApiUrl = `${configuredApiBaseUrl}/api/research`;
 
 const getApiErrorMessage = (response, errorData = {}) => {
   if (response.status === 404 && !configuredApiBaseUrl) {
-    return 'API route not found. Redeploy on Vercel so the /api/research function is published.';
+    return 'API route not found. Redeploy on Vercel and make sure the project root is the repo root, not dist, so /api/research is published.';
   }
 
   return errorData.error || errorData.message || response.statusText || `Request failed with status ${response.status}`;
