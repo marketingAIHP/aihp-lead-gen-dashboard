@@ -4,6 +4,17 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+const configuredApiBaseUrl = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '');
+const researchApiUrl = `${configuredApiBaseUrl}/api/research`;
+
+const getApiErrorMessage = (response, errorData = {}) => {
+  if (response.status === 404 && !configuredApiBaseUrl) {
+    return 'API route not found. Redeploy on Vercel so the /api/research function is published.';
+  }
+
+  return errorData.error || errorData.message || response.statusText || `Request failed with status ${response.status}`;
+};
+
 export default function GurgaonLeadIntelligenceDashboard() {
   const [isResearching, setIsResearching] = useState(false);
   const [researchProgress, setResearchProgress] = useState([]);
@@ -440,20 +451,15 @@ Website: www.aihp.in`;
 }`;
       }
 
-      // Use relative path for production (Render), localhost for dev
-      const isLocal = window.location.hostname === 'localhost';
-      const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
-      const fullFetchUrl = `${apiUrl}/api/research`;
-
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
-      console.log(`[DIAGNOSTIC] Fetching URL: ${fullFetchUrl}`);
+      console.log(`[DIAGNOSTIC] Fetching URL: ${researchApiUrl}`);
 
       // Optional: Alert the user if they are on a known static URL (ending in -1)
       if (window.location.hostname.includes('-1.onrender.com')) {
         addProgress(`⚠️ WARNING: You are visiting the Static Site URL. Some features may not work. Please use the Web Service URL.`, 'warning');
       }
 
-      const response = await fetch(fullFetchUrl, {
+      const response = await fetch(researchApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -475,7 +481,7 @@ Website: www.aihp.in`;
           errorData = { error: 'Unknown server error', status: response.status };
         }
         console.error('API Error:', errorData);
-        addProgress(`❌ Error searching ${signal.name}: ${errorData.error || response.statusText}`, 'error');
+        addProgress(`❌ Error searching ${signal.name}: ${getApiErrorMessage(response, errorData)}`, 'error');
         setActiveResearch(prev => ({ ...prev, [signal.id]: false }));
         return;
       }
@@ -490,7 +496,7 @@ Website: www.aihp.in`;
         if (window.location.hostname.includes('dashboard-1.onrender.com')) {
           addProgress(`❌ ERROR: You are using the WRONG URL. Please use the Node Service URL (without -1).`, 'error');
         } else {
-          addProgress(`❌ Error: Server returned ${response.status} (non-JSON). Check Render logs.`, 'error');
+          addProgress(`❌ Error: Server returned ${response.status} (non-JSON). Check your deployment logs.`, 'error');
         }
         throw new Error(`Server returned non-JSON response (${response.status})`);
       }
@@ -548,6 +554,9 @@ Website: www.aihp.in`;
       }, 500);
 
     } catch (error) {
+      if (error instanceof TypeError && error.message === 'Failed to fetch' && window.location.hostname === 'localhost') {
+        addProgress('❌ Local API is not reachable. Restart `npm run dev` to start both the app and the API.', 'error');
+      }
       addProgress(`❌ Error: ${error.message}`, 'error');
       console.error('Research error:', error);
     } finally {
@@ -613,20 +622,15 @@ Website: www.aihp.in`;
 }`;
 
 
-      // Use relative path for production (Render), localhost for dev
-      const isLocal = window.location.hostname === 'localhost';
-      const apiUrl = isLocal ? (import.meta.env.VITE_API_URL || 'http://localhost:3001') : '';
-      const fullFetchUrl = `${apiUrl}/api/research`;
-
       console.log(`[DIAGNOSTIC] Page Hostname: ${window.location.hostname}`);
-      console.log(`[DIAGNOSTIC] Calling API URL: ${fullFetchUrl}`);
+      console.log(`[DIAGNOSTIC] Calling API URL: ${researchApiUrl}`);
 
       // Optional: Alert the user if they are on a known static URL (ending in -1)
       if (window.location.hostname.includes('-1.onrender.com')) {
         addProgress(`⚠️ WARNING: You are visiting the Static Site URL. Some features may not work.`, 'warning');
       }
 
-      const response = await fetch(`${apiUrl}/api/research`, {
+      const response = await fetch(researchApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -648,7 +652,7 @@ Website: www.aihp.in`;
           errorData = { error: 'Unknown server error', status: response.status };
         }
         console.error('API Error:', errorData);
-        addProgress(`❌ Error searching: ${errorData.error || response.statusText}`, 'error');
+        addProgress(`❌ Error searching: ${getApiErrorMessage(response, errorData)}`, 'error');
         setIsResearching(false);
         return;
       }
@@ -709,6 +713,9 @@ Website: www.aihp.in`;
       }
 
     } catch (error) {
+      if (error instanceof TypeError && error.message === 'Failed to fetch' && window.location.hostname === 'localhost') {
+        addProgress('❌ Local API is not reachable. Restart `npm run dev` to start both the app and the API.', 'error');
+      }
       addProgress(`❌ Error: ${error.message}`, 'error');
       console.error('Research error:', error);
     } finally {

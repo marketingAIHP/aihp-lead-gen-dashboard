@@ -1,6 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+const apiPort = process.env.DEV_API_PORT || '3101'
+const clientPort = Number(process.env.DEV_CLIENT_PORT || '3100')
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -10,12 +13,13 @@ export default defineConfig({
     minify: 'esbuild',
   },
   server: {
-    port: 3000,
+    port: clientPort,
+    strictPort: true,
     proxy: {
-      // In dev, forward /api/* to the local Express backend on port 3001
-      // On Netlify (production), netlify.toml redirects handle this instead
+      // Use IPv4 explicitly so the proxy doesn't get routed to a stale IPv6 listener on Windows.
+      // DEV_API_PORT keeps the client aligned with the API server started by scripts/dev.js.
       '/api': {
-        target: 'http://localhost:3001',
+        target: `http://127.0.0.1:${apiPort}`,
         changeOrigin: true,
       },
     },

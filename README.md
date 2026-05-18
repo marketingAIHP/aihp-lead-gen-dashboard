@@ -4,7 +4,7 @@ AI-powered lead research dashboard for finding companies looking for office spac
 
 ## Features
 
-- 🤖 **AI-Powered Research** - Automated web research using Claude AI
+- 🤖 **AI-Powered Research** - Automated web research using OpenRouter
 - 🔍 **7 Research Signals** - Facility hiring, funding, expansion, GCC, ecosystem mapping
 - 🎯 **Ecosystem Mapping** - Find Google/IBM vendors & partners who need proximity
 - 📧 **One-Click Outreach** - Personalized email templates
@@ -12,7 +12,19 @@ AI-powered lead research dashboard for finding companies looking for office spac
 - 🛡️ **Competitor Filtering** - Auto-filters Table Space, WeWork, Awfis, etc.
 - 📊 **Lead Scoring** - HOT/WARM/QUALIFIED priority system
 
-## 🚀 Deploy to Netlify
+## 🚀 Deploy to Vercel
+
+### Recommended Vercel Setup
+
+1. Import the repository into Vercel.
+2. Keep the build command as `npm run build`.
+3. Add `OPENROUTER_API_KEY` in Project Settings → Environment Variables.
+4. Optionally add `OPENROUTER_MODEL` if you want a model other than the default `openai/gpt-4o-mini`.
+5. Redeploy so Vercel publishes both the static Vite app and the `/api/research` function.
+
+The repo now includes Vercel API routes in `api/`, so the deployed frontend can call `/api/research` directly on the same domain.
+
+## Alternative Netlify Deploy
 
 ### Method 1: Deploy from GitHub (Recommended)
 
@@ -85,18 +97,27 @@ AI-powered lead research dashboard for finding companies looking for office spac
    ```bash
    npm run dev
    ```
+   This starts both the Vite frontend on `http://localhost:3100` and the local API on `http://localhost:3101`.
 
 3. **Open browser:**
-   - Visit `http://localhost:3000`
+   - Visit `http://localhost:3100`
 
 ## 🔧 Configuration
 
-### Environment Variables (Optional)
+### Environment Variables
 
-If you want to add environment variables:
+For Vercel:
 
-1. In Netlify dashboard → Site settings → Environment variables
-2. Add any API keys or configuration
+1. Open Project Settings → Environment Variables
+2. Add `OPENROUTER_API_KEY`
+3. Optionally add `OPENROUTER_MODEL`
+4. Redeploy the project
+
+For Netlify:
+
+1. Open Site settings → Environment variables
+2. Add `OPENROUTER_API_KEY`
+3. Optionally add `OPENROUTER_MODEL`
 
 ### Custom Domain
 
@@ -158,13 +179,21 @@ AI generates different templates based on:
 
 ## 🐛 Troubleshooting
 
-### Build fails on Netlify:
+### Build fails on Vercel or Netlify:
 
 Check build logs and ensure:
 ```bash
 npm install  # Installs dependencies
 npm run build  # Must succeed locally first
 ```
+
+### `/api/research` returns 404 on Vercel:
+
+This means the deployment does not include the Vercel function yet.
+
+1. Make sure the repo contains `api/research.js`
+2. Confirm `OPENROUTER_API_KEY` is set in Vercel
+3. Trigger a fresh redeploy
 
 ### Email button not working:
 
@@ -187,7 +216,10 @@ aihp-dashboard/
 ├── package.json         # Dependencies
 ├── vite.config.js       # Build configuration
 ├── tailwind.config.js   # Tailwind configuration
-├── netlify.toml         # Netlify deployment config
+├── api/                # Vercel serverless functions
+├── lib/                # Shared OpenRouter backend logic
+├── netlify.toml        # Netlify deployment config
+├── vercel.json         # Vercel function config
 └── README.md            # This file
 ```
 
@@ -201,7 +233,7 @@ git commit -m "Update description"
 git push
 ```
 
-Netlify will automatically rebuild and deploy!
+Your hosting provider will automatically rebuild and deploy.
 
 ## 💡 Tips
 
@@ -214,7 +246,7 @@ Netlify will automatically rebuild and deploy!
 ## 📞 Support
 
 For issues or questions:
-- Check the build logs in Netlify dashboard
+- Check the build logs in your hosting dashboard
 - Ensure all dependencies installed: `npm install`
 - Test locally first: `npm run dev`
 
@@ -224,6 +256,6 @@ Proprietary - AIHP Internal Use Only
 
 ---
 
-**Built with React, Vite, Tailwind CSS, and Claude AI**
+**Built with React, Vite, Tailwind CSS, and OpenRouter**
 
 Last updated: February 2026

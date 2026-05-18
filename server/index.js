@@ -1,17 +1,17 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import fetch from 'node-fetch';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { buildNoStoreHeaders, getResearchConfig, runResearchRequest } from '../lib/research.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || process.env.DEV_API_PORT || 3101;
 
-// Debug: List directory structure to help find dist folder on Render
+// Debug: List directory structure to help find the built frontend
 import { readdirSync, existsSync } from 'fs';
 console.log(`[SERVICE] DASHBOARD-BACKEND-NODE`);
 console.log(`[DEBUG] Current working directory: ${process.cwd()}`);
@@ -29,7 +29,7 @@ const possibleDistPaths = [
     path.join(__dirname, 'dist'),               // Fallback 1: ./dist
     path.join(process.cwd(), 'dist'),           // Fallback 2: cwd/dist
     path.join(process.cwd(), '..', 'dist'),      // Fallback 3: cwd/../dist
-    '/opt/render/project/src/dist'              // Render Specific absolute path
+    '/opt/render/project/src/dist'              // Legacy hosted deployment fallback
 ];
 
 let distPath = '';
@@ -63,79 +63,36 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/api/ping', (req, res) => {
+    const config = getResearchConfig();
     res.json({
         status: 'ok',
         time: new Date().toISOString(),
         env: {
             NODE_ENV: process.env.NODE_ENV,
-            HAS_NVIDIA_KEY: !!(process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY)
+            HAS_OPENROUTER_KEY: !!config.apiKey,
+            OPENROUTER_MODEL: config.model
         },
         distPath
     });
 });
 
-// 2. NVIDIA API research endpoint
+// 2. OpenRouter research endpoint
 app.post('/api/research', async (req, res) => {
     console.log(`[${new Date().toISOString()}] Received research request`);
     try {
         const { prompt, requestId } = req.body;
+        res.set(buildNoStoreHeaders());
 
-        if (!prompt) {
-            console.log('Error: Prompt missing in request body');
-            return res.status(400).json({ error: 'Prompt is required' });
+        console.log(`Forwarding request to OpenRouter${requestId ? ` (requestId=${requestId})` : ''}...`);
+
+        const result = await runResearchRequest({ prompt, requestId });
+        if (!result.ok) {
+            console.error('OpenRouter API Error:', result.status, result.body);
+            return res.status(result.status).json(result.body);
         }
 
-        res.set({
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'Surrogate-Control': 'no-store'
-        });
-
-        const apiKey = process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY;
-
-        if (!apiKey) {
-            console.error('CRITICAL: NVIDIA_API_KEY not configured in environment variables');
-            return res.status(500).json({
-                error: 'API key not configured',
-                hint: 'Check Render dashboard Environment Variables'
-            });
-        }
-
-        console.log(`Forwarding request to NVIDIA API${requestId ? ` (requestId=${requestId})` : ''}...`);
-
-        const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'meta/llama-3.1-405b-instruct',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 0.7,
-                max_tokens: 4000
-            })
-        });
-
-        if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { detail: 'Could not parse error response from NVIDIA' };
-            }
-            console.error('NVIDIA API Error:', response.status, errorData);
-            return res.status(response.status).json({
-                error: 'NVIDIA API error',
-                status: response.status,
-                details: errorData
-            });
-        }
-
-        const data = await response.json();
-        console.log('NVIDIA API Response successful');
-        res.json(data);
+        console.log('OpenRouter response successful');
+        res.status(result.status).json(result.body);
 
     } catch (error) {
         console.error('SERVER FATAL ERROR:', error.message);
@@ -166,7 +123,7 @@ app.get('*', (req, res) => {
             <p>The backend is running, but the frontend files are missing.</p>
             <p>Checked at: ${indexPath}</p>
             <hr>
-            <p><b>Diagnostic:</b> If you are seeing this, your Render Build Command should be: <code>npm install && npm run build</code></p>
+            <p><b>Diagnostic:</b> If you are seeing this, your build step needs to run <code>npm install && npm run build</code>.</p>
         `);
     }
 });
@@ -177,7 +134,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`🌐 Frontend: http://localhost:${PORT}`);
 });
 
-// Global error handlers for better debugging on Render
+// Global error handlers for better debugging in hosted environments
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

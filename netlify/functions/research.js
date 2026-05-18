@@ -1,8 +1,4 @@
-// Netlify serverless function to proxy NVIDIA API requests
-// This solves CORS issues and keeps the API key secure on the server
-
-// Import fetch for Node.js (Netlify Functions use Node.js 18+)
-import fetch from 'node-fetch';
+import { buildNoStoreHeaders, runResearchRequest } from '../../lib/research.js';
 
 export const handler = async (event, context) => {
     // Handle OPTIONS request for CORS preflight
@@ -31,94 +27,31 @@ export const handler = async (event, context) => {
     }
 
     try {
-        // Parse the request body
-        const { prompt, requestId } = JSON.parse(event.body);
+        const { prompt, requestId } = JSON.parse(event.body || '{}');
+        console.log(`Calling OpenRouter${requestId ? ` (requestId=${requestId})` : ''}...`);
 
-        if (!prompt) {
-            console.log('Error: No prompt provided');
+        const result = await runResearchRequest({ prompt, requestId });
+        if (!result.ok) {
+            console.error('OpenRouter API Error:', result.status, result.body);
             return {
-                statusCode: 400,
+                statusCode: result.status,
                 headers: {
                     'Access-Control-Allow-Origin': '*',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ error: 'Prompt is required' })
+                body: JSON.stringify(result.body)
             };
         }
 
-        // Get API key from environment variable (set in Netlify dashboard)
-        // Falls back to VITE_NVIDIA_API_KEY for compatibility with .env
-        const apiKey = process.env.NVIDIA_API_KEY || process.env.VITE_NVIDIA_API_KEY;
-
-        if (!apiKey) {
-            console.error('CRITICAL: NVIDIA_API_KEY environment variable not set!');
-            console.error('Please add NVIDIA_API_KEY to Netlify environment variables');
-            return {
-                statusCode: 500,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    error: 'API key not configured',
-                    hint: 'Add NVIDIA_API_KEY to Netlify environment variables'
-                })
-            };
-        }
-
-        console.log(`Calling NVIDIA API${requestId ? ` (requestId=${requestId})` : ''}...`);
-
-        // Call NVIDIA API from the server (no CORS issues here!)
-        const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'meta/llama-3.1-405b-instruct',
-                messages: [{
-                    role: 'user',
-                    content: prompt
-                }],
-                temperature: 0.7,
-                max_tokens: 4000
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('NVIDIA API Error:', response.status, errorData);
-            return {
-                statusCode: response.status,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    error: 'NVIDIA API error',
-                    status: response.status,
-                    details: errorData
-                })
-            };
-        }
-
-        const data = await response.json();
-        console.log('NVIDIA API success!');
-
-        // Return the response to the frontend
         return {
-            statusCode: 200,
+            statusCode: result.status,
             headers: {
+                ...buildNoStoreHeaders(),
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type',
-                'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0',
-                'Surrogate-Control': 'no-store'
+                'Access-Control-Allow-Headers': 'Content-Type'
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(result.body)
         };
 
     } catch (error) {
